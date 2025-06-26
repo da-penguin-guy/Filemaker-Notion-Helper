@@ -1,5 +1,11 @@
 name: Auto Release and Build PyInstaller Executables
 
+permissions:
+  contents: write
+  packages: write
+  issues: read
+  pull-requests: read
+
 on:
   push:
     branches: [ main ]
@@ -19,17 +25,22 @@ jobs:
           VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Create tag if not exists
         id: create_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.get_version.outputs.version }}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists"
           else
-            git config user.name github-actions
-            git config user.email github-actions@github.com
             git tag $TAG
-            git push origin $TAG
+            git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} $TAG
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
