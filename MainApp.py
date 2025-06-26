@@ -11,7 +11,7 @@ import sys
 import csv
 import os
 
-APP_VERSION = "1.1.9" 
+APP_VERSION = "1.1.10" 
 GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}
@@ -610,26 +610,6 @@ def AddNewTab(tabName: str, contentFunc=None) -> tuple:
 
     return newTab, newTabLayout
 
-def CheckForUpdates(parent=None):
-    """Check GitHub Releases for a new version and prompt to download."""
-    try:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-        resp = requests.get(url, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            latest_version = data["tag_name"].lstrip("v")
-            if latest_version > APP_VERSION:
-                msg = QMessageBox(parent)
-                msg.setIcon(QMessageBox.Icon.Information)
-                msg.setWindowTitle("Update Available")
-                msg.setText(f"A new version ({latest_version}) is available!\n\nWould you like to download it?")
-                msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                if msg.exec() == QMessageBox.StandardButton.Yes:
-                    webbrowser.open(data["html_url"])
-        # else: ignore errors silently
-    except Exception as e:
-        print(f"Update check failed: {e}")
-
 def CheckForPyUpdaterUpdates(parent=None):
     """Check for updates using PyUpdater and prompt the user to update."""
     try:
@@ -687,7 +667,6 @@ if __name__ == "__main__":
     window.setLayout(layout)
     window.show()
 
-    CheckForUpdates(window)
     CheckForPyUpdaterUpdates(window)
 
     sys.exit(app.exec())
