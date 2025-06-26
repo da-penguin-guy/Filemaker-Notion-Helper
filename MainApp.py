@@ -2,6 +2,10 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from NotionHelper import *
+from pyupdater.client import Client
+from pyupdater.client.downloader import FileDownloader
+from client_config import ClientConfig
+import threading
 import requests
 import webbrowser
 import sys
@@ -627,6 +631,28 @@ def CheckForUpdates(parent=None):
     except Exception as e:
         print(f"Update check failed: {e}")
 
+def CheckForPyUpdaterUpdates(parent=None):
+    """Check for updates using PyUpdater and prompt the user to update."""
+    try:
+        client = Client(ClientConfig(), refresh=True)
+        app_update = client.update_check(ClientConfig.APP_NAME, APP_VERSION)
+        if app_update is not None:
+            msg = QMessageBox(parent)
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setWindowTitle("Update Available")
+            msg.setText(f"A new version is available!\n\nWould you like to download and install it now?")
+            msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            result = msg.exec()
+            if result == QMessageBox.StandardButton.Yes:
+                # Download and install update
+                app_update.download()
+                if app_update.is_downloaded():
+                    app_update.extract_restart()
+                else:
+                    QMessageBox.critical(parent, "Update Error", "Failed to download the update.")
+    except Exception as e:
+        print(f"PyUpdater update check failed: {e}")
+
 def CreateLauncherButton(text: str, gridLayout: QGridLayout, row: int, col: int, callback=None) -> QPushButton:
     """Create a large launcher button for the main grid."""
     btn = QPushButton(text)
@@ -663,5 +689,6 @@ if __name__ == "__main__":
     window.show()
 
     CheckForUpdates(window)
+    CheckForPyUpdaterUpdates(window)
 
     sys.exit(app.exec())

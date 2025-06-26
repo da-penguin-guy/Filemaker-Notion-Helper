@@ -72,11 +72,27 @@ jobs:
         run: |
           python -m PyInstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
 
+      - name: Install PyUpdater
+        run: |
+          pip install pyupdater
+
+      - name: Restore PyUpdater private key
+        run: |
+          mkdir keys
+          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
+
+      - name: Package and sign with PyUpdater
+        run: |
+          pyupdater pkg --process
+          pyupdater sign
+
       - name: Upload to Release (Windows)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
-          files: dist/FNBHelper-Windows.exe
+          files: |
+            dist/FNBHelper-Windows.exe
+            deploy/**
 
   build-macos:
     needs: create-release
@@ -124,8 +140,24 @@ jobs:
           cd dist
           zip -r FNBHelper-macOS.app.zip FNBHelper-macOS.app
 
+      - name: Install PyUpdater
+        run: |
+          ./venv/bin/pip install pyupdater
+
+      - name: Restore PyUpdater private key
+        run: |
+          mkdir keys
+          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
+
+      - name: Package and sign with PyUpdater
+        run: |
+          ./venv/bin/pyupdater pkg --process
+          ./venv/bin/pyupdater sign
+
       - name: Upload to Release (macOS)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
-          files: dist/FNBHelper-macOS.app.zip
+          files: |
+            dist/FNBHelper-macOS.app.zip
+            deploy/**

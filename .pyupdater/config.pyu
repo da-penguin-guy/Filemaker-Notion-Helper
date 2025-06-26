@@ -1,0 +1,20 @@
+{
+  "config_dir": "C:\\Users\\robot\\OneDrive\\Desktop\\Filemaker-Notion-Helper\\.pyupdater",
+  "filename": "C:\\Users\\robot\\OneDrive\\Desktop\\Filemaker-Notion-Helper\\.pyupdater\\config.pyu",
+  "count": 0,
+  "app_config": {
+    "APP_NAME": "F&B Helper",
+    "CLIENT_CONFIG_PATH": [
+      "client_config.py"
+    ],
+    "COMPANY_NAME": "Flesh & Bone",
+    "PLUGIN_CONFIGS": {},
+    "UPDATE_PATCHES": true,
+    "MAX_DOWNLOAD_RETRIES": 3,
+    "HTTP_TIMEOUT": 30,
+    "UPDATE_URLS": [
+      "https://github.com/da-penguin-guy/Filemaker-Notion-Helper/releases"
+    ],
+    "DATA_DIR": "C:\\Users\\robot\\OneDrive\\Desktop\\Filemaker-Notion-Helper"
+  }
+}
