@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
-from PyQt6.QtGui import *
+from PyQt6.QtGui import QIcon
 from NotionHelper import *
 from pyupdater.client import Client
 from pyupdater.client.downloader import FileDownloader
@@ -648,6 +648,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = QWidget()
     window.setWindowTitle("FNB Helper")
+    window.setWindowIcon(QIcon("F&B Icon.png"))
     window.resize(700, 400)
 
     layout = QVBoxLayout()
