@@ -12,4 +12,7 @@ twIDAQAB
     COMPANY_NAME = 'Flesh & Bone'
     HTTP_TIMEOUT = 30
     MAX_DOWNLOAD_RETRIES = 3
-    UPDATE_URLS = ['https://github.com/da-penguin-guy/Filemaker-Notion-Helper/releases']
+    # Use the latest release's deploy/ folder as the update source
+    UPDATE_URLS = [
+        'https://github.com/da-penguin-guy/Filemaker-Notion-Helper/releases/latest/download/deploy/'
+    ]

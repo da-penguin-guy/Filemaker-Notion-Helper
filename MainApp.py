@@ -3,15 +3,12 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from NotionHelper import *
 from pyupdater.client import Client
-from pyupdater.client.downloader import FileDownloader
 from client_config import ClientConfig
-import requests
-import webbrowser
 import sys
 import csv
 import os
 
-APP_VERSION = "1.1.11" 
+APP_VERSION = "1.1.12" 
 GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}
