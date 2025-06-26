@@ -65,9 +65,9 @@ jobs:
 
       - name: Set up venv and install dependencies
         run: |
-          python -m venv venv --upgrade-deps
+          python -m venv venv
           venv\Scripts\python -m ensurepip --upgrade
-          venv\Scripts\python -m pip install --upgrade pip
+          venv\Scripts\python -m pip install --upgrade pip setuptools wheel
           venv\Scripts\python -m pip install -r requirements.txt pyinstaller
 
       - name: Build with PyInstaller (Windows)
