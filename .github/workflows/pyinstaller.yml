@@ -63,14 +63,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Set up venv and install dependencies
         run: |
+          python -m venv venv
+          venv\Scripts\activate
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          python -m pip install -r requirements.txt pyinstaller
 
       - name: Build with PyInstaller (Windows)
         run: |
-          pyinstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
+          venv\Scripts\activate
+          venv\Scripts\python -m PyInstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
 
       - name: Upload to Release (Windows)
         uses: softprops/action-gh-release@v2
@@ -90,19 +93,22 @@ jobs:
           python-version: '3.11'
           architecture: 'arm64'
 
-      - name: Install dependencies (arm64)
+      - name: Set up venv and install dependencies (arm64)
         run: |
-          arch -arm64 python3 -m pip install --upgrade pip
-          arch -arm64 python3 -m pip install -r requirements.txt pyinstaller pyqt6
+          python3 -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller pyqt6
 
       - name: Find Qt platforms plugin path
         id: qtpaths
         run: |
-          PYTHON_BIN=$(which python3)
+          source venv/bin/activate
+          PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
           QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.plugins))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
-          echo "QT_PLATFORMS is: $QT_PLUGINS/platforms""
+          echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
 
       - name: Ensure Qt platforms plugin exists
         run: |
@@ -114,7 +120,8 @@ jobs:
 
       - name: Build with PyInstaller (macOS arm64)
         run: |
-          arch -arm64 pyinstaller --windowed MainApp.py --name FNBHelper-macOS \
+          source venv/bin/activate
+          ./venv/bin/python -m PyInstaller --windowed MainApp.py --name FNBHelper-macOS \
             --add-data "$QT_PLATFORMS:platforms"
 
       - name: Zip .app bundle
