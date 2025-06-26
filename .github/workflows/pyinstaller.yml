@@ -98,20 +98,20 @@ jobs:
       - name: Find Qt platforms plugin path
         id: qtpaths
         run: |
-          echo "QT_PLUGINS=$(arch -arm64 python3 -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')" >> $GITHUB_ENV
+          echo "QT_PLATFORMS=$(arch -arm64 python3 -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')/platforms" >> $GITHUB_ENV
 
       - name: Ensure Qt platforms plugin exists
         run: |
-          if [ ! -d "${QT_PLUGINS}/platforms" ]; then
-            echo "ERROR: Qt 'platforms' directory not found at ${QT_PLUGINS}/platforms"
-            ls -l "${QT_PLUGINS}" || true
+          if [ ! -d "$QT_PLATFORMS" ]; then
+            echo "ERROR: Qt 'platforms' directory not found at $QT_PLATFORMS"
+            ls -l "${QT_PLATFORMS%/platforms}" || true
             exit 1
           fi
 
       - name: Build with PyInstaller (macOS arm64)
         run: |
           arch -arm64 pyinstaller --windowed MainApp.py --name FNBHelper-macOS \
-            --add-binary "${QT_PLUGINS}/platforms:platforms"
+            --add-data "$QT_PLATFORMS:platforms"
 
       - name: Zip .app bundle
         run: |
