@@ -1,5 +1,7 @@
 import requests
 import os
+import sys
+from PyQt6.QtWidgets import QMessageBox, QApplication
 
 # Try to get the Notion API key from environment (for GitHub Actions/secrets)
 notionToken = os.getenv("NOTION_API_KEY")
@@ -14,7 +16,13 @@ if notionToken is None:
         pass
 
 if notionToken is None:
-    raise ValueError("Notion API key not found. Please set the NOTION_API_KEY environment variable or provide a .env file.")
+    app = QApplication(sys.argv)
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Icon.Critical)
+    msg.setWindowTitle("Missing Notion API Key")
+    msg.setText("Notion API key not found. Please set the NOTION_API_KEY environment variable or provide a .env file in the same folder as the .exe.")
+    msg.exec()
+    sys.exit(1)
 
 headers = {
     "Authorization": f"Bearer {notionToken}",
