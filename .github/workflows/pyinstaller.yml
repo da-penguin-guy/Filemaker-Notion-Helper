@@ -72,7 +72,10 @@ jobs:
 
       - name: Build with PyInstaller (Windows)
         run: |
-          python -m PyInstaller --onefile --windowed MainApp.py --name FNBHelper-Windows --hidden-import=_cffi_backend
+          python -m PyInstaller --onefile --windowed MainApp.py \ 
+          --name FNBHelper-Windows \
+          --hidden-import=_cffi_backend \
+          --icon=resources/F&B Icon.ico
 
       - name: Install PyUpdater
         run: |
@@ -139,8 +142,8 @@ jobs:
           ./venv/bin/python -m PyInstaller --windowed MainApp.py --name FNBHelper-macOS \
             --add-data "$QT_PLATFORMS:platforms" \
             --hidden-import=PyQt6.sip \
-            --hidden-import=PyQt6.QtCore
-
+            --hidden-import=PyQt6.QtCore \
+            --icon=resources/F&B Icon.icns
       - name: List bundled Qt platforms (debug)
         run: |
           ls -l dist/FNBHelper-macOS.app/Contents/MacOS/platforms || true
