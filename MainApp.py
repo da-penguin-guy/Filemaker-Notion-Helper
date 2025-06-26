@@ -2,9 +2,14 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from NotionHelper import *
+import requests
+import webbrowser
 import sys
 import csv
 import os
+
+APP_VERSION = "1.0.0" 
+GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}
 
@@ -602,6 +607,25 @@ def AddNewTab(tabName: str, contentFunc=None) -> tuple:
 
     return newTab, newTabLayout
 
+def CheckForUpdates(parent=None):
+    """Check GitHub Releases for a new version and prompt to download."""
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            latest_version = data["tag_name"].lstrip("v")
+            if latest_version > APP_VERSION:
+                msg = QMessageBox(parent)
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setWindowTitle("Update Available")
+                msg.setText(f"A new version ({latest_version}) is available!\n\nWould you like to download it?")
+                msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                if msg.exec() == QMessageBox.StandardButton.Yes:
+                    webbrowser.open(data["html_url"])
+        # else: ignore errors silently
+    except Exception as e:
+        print(f"Update check failed: {e}")
 
 def CreateLauncherButton(text: str, gridLayout: QGridLayout, row: int, col: int, callback=None) -> QPushButton:
     """Create a large launcher button for the main grid."""
@@ -612,6 +636,7 @@ def CreateLauncherButton(text: str, gridLayout: QGridLayout, row: int, col: int,
         btn.clicked.connect(callback)
     gridLayout.addWidget(btn, row, col)
     return btn
+
 
 if __name__ == "__main__":
     """Main entry point for the FNB Helper application."""
@@ -636,5 +661,7 @@ if __name__ == "__main__":
     layout.addWidget(tabs)
     window.setLayout(layout)
     window.show()
+
+    CheckForUpdates(window)
 
     sys.exit(app.exec())
