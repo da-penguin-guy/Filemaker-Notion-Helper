@@ -100,9 +100,9 @@ jobs:
         run: |
           PYTHON_BIN=$(which python3)
           echo "Using python: $PYTHON_BIN"
-          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')
+          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.plugins))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
-          echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
+          echo "QT_PLATFORMS is: $QT_PLUGINS/platforms""
 
       - name: Ensure Qt platforms plugin exists
         run: |
