@@ -89,9 +89,17 @@ jobs:
           if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
           Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
-      - name: Package with PyUpdater
+      - name: Get version from MainApp.py
+        id: get_version
         run: |
-          pyupdater pkg --process
+          $version = (Get-Content MainApp.py | Select-String -Pattern 'APP_VERSION' | Select-Object -First 1).Line.Split('"')[1]
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Package with PyUpdater
+        id: package
+        run: pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }}
+        shell: pwsh
 
       - name: List files in workspace  
         run: Get-ChildItem -Recurse
@@ -172,7 +180,8 @@ jobs:
 
       - name: Package with PyUpdater (macOS)
         run: |
-          ./venv/bin/pyupdater pkg --process
+          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
+          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION
 
       - name: List files in workspace
         run: ls -R
