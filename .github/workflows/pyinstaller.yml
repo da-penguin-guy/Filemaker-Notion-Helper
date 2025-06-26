@@ -93,6 +93,10 @@ jobs:
         run: |
           pyupdater pkg --process
 
+      - name: List files in workspace  
+        run: Get-ChildItem -Recurse
+        shell: pwsh
+
       - name: Upload to Release (Windows)
         uses: softprops/action-gh-release@v2
         with:
@@ -169,6 +173,9 @@ jobs:
       - name: Package with PyUpdater (macOS)
         run: |
           ./venv/bin/pyupdater pkg --process
+
+      - name: List files in workspace
+        run: ls -R
 
       - name: Upload to Release (macOS)
         uses: softprops/action-gh-release@v2
