@@ -1,13 +1,48 @@
-name: Build and Release PyInstaller Executables
+name: Auto Release and Build PyInstaller Executables
 
 on:
   push:
-    tags:
-      - 'v*'    # Only run on version tags like v1.0.0
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from MainApp.py
+        id: get_version
+        run: |
+          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create tag if not exists
+        id: create_tag
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git tag $TAG
+            git push origin $TAG
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.create_tag.outputs.tag }}
+          name: Release ${{ steps.create_tag.outputs.tag }}
+          draft: false
+          prerelease: false
+
   build-windows:
+    needs: create-release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,19 +61,14 @@ jobs:
         run: |
           pyinstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
 
-      - name: Upload artifact (Windows)
-        uses: actions/upload-artifact@v4
-        with:
-          name: FNBHelper-Windows
-          path: dist/FNBHelper-Windows.exe
-
       - name: Upload to Release (Windows)
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: dist/FNBHelper-Windows.exe
 
   build-macos:
+    needs: create-release
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,14 +87,8 @@ jobs:
         run: |
           pyinstaller --onefile --windowed MainApp.py --name FNBHelper-macOS
 
-      - name: Upload artifact (macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          name: FNBHelper-macOS
-          path: dist/FNBHelper-macOS
-
       - name: Upload to Release (macOS)
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: dist/FNBHelper-macOS
