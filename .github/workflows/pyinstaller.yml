@@ -66,13 +66,11 @@ jobs:
       - name: Set up venv and install dependencies
         run: |
           python -m venv venv
-          venv\Scripts\activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pyinstaller
+          venv\Scripts\python -m pip install --upgrade pip
+          venv\Scripts\python -m pip install -r requirements.txt pyinstaller
 
       - name: Build with PyInstaller (Windows)
         run: |
-          venv\Scripts\activate
           venv\Scripts\python -m PyInstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
 
       - name: Upload to Release (Windows)
@@ -96,17 +94,16 @@ jobs:
       - name: Set up venv and install dependencies (arm64)
         run: |
           python3 -m venv venv
-          source venv/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pyinstaller pyqt6
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/python -m pip install -r requirements.txt pyinstaller pyqt6
 
       - name: Find Qt platforms plugin path
         id: qtpaths
         run: |
-          source venv/bin/activate
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
-          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.plugins))')
+          $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins)))'
+          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
 
@@ -120,7 +117,6 @@ jobs:
 
       - name: Build with PyInstaller (macOS arm64)
         run: |
-          source venv/bin/activate
           ./venv/bin/python -m PyInstaller --windowed MainApp.py --name FNBHelper-macOS \
             --add-data "$QT_PLATFORMS:platforms"
 
