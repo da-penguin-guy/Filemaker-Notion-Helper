@@ -99,7 +99,7 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: |
             dist/FNBHelper-Windows.exe
-            deploy/**
+            deploy/*
 
   build-macos:
     needs: create-release
@@ -176,4 +176,4 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: |
             dist/FNBHelper-macOS.app.zip
-            deploy/**
+            deploy/*
