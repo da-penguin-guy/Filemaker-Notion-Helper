@@ -72,9 +72,9 @@ jobs:
 
       - name: Build with PyInstaller (Windows)
         run: |
-          python -m PyInstaller --onefile --windowed MainApp.py \
-            --name FNBHelper-Windows \
-            --hidden-import=_cffi_backend \
+          python -m PyInstaller --onefile --windowed MainApp.py `
+            --name FNBHelper-Windows `
+            --hidden-import=_cffi_backend `
             --icon="F&B Icon.ico"
         working-directory: .
         shell: pwsh
