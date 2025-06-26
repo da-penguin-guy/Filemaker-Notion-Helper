@@ -78,7 +78,7 @@ jobs:
 
       - name: Restore PyUpdater private key
         run: |
-          mkdir keys
+          mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
       - name: Package and sign with PyUpdater
@@ -146,7 +146,7 @@ jobs:
 
       - name: Restore PyUpdater private key
         run: |
-          mkdir keys
+          mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
       - name: Package and sign with PyUpdater
