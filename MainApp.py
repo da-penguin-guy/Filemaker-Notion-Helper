@@ -11,7 +11,7 @@ import sys
 import csv
 import os
 
-APP_VERSION = "1.1.7" 
+APP_VERSION = "1.1.8" 
 GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}

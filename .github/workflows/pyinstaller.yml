@@ -137,7 +137,13 @@ jobs:
       - name: Build with PyInstaller (macOS arm64)
         run: |
           ./venv/bin/python -m PyInstaller --windowed MainApp.py --name FNBHelper-macOS \
-            --add-data "$QT_PLATFORMS:platforms"
+            --add-data "$QT_PLATFORMS:platforms" \
+            --hidden-import=PyQt6.sip \
+            --hidden-import=PyQt6.QtCore
+
+      - name: List bundled Qt platforms (debug)
+        run: |
+          ls -l dist/FNBHelper-macOS.app/Contents/MacOS/platforms || true
 
       - name: Zip .app bundle
         run: |
