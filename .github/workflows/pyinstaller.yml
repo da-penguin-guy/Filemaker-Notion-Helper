@@ -80,23 +80,30 @@ jobs:
 
   build-macos:
     needs: create-release
-    runs-on: macos-latest
+    runs-on: macos-14  # Ensures Apple Silicon runner
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python (Apple Silicon)
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          architecture: 'arm64'
 
-      - name: Install dependencies
+      - name: Install dependencies (arm64)
         run: |
-          python3 -m pip install --upgrade pip
-          pip3 install -r requirements.txt pyinstaller
+          arch -arm64 python3 -m pip install --upgrade pip
+          arch -arm64 pip3 install -r requirements.txt pyinstaller pyqt6
 
-      - name: Build with PyInstaller (macOS)
+      - name: Find Qt platforms plugin path
+        id: qtpaths
         run: |
-          pyinstaller --windowed MainApp.py --name FNBHelper-macOS
+          echo "QT_PLUGINS=$(arch -arm64 python3 -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')" >> $GITHUB_ENV
+
+      - name: Build with PyInstaller (macOS arm64)
+        run: |
+          arch -arm64 pyinstaller --windowed MainApp.py --name FNBHelper-macOS \
+            --add-binary "${QT_PLUGINS}/platforms:platforms"
 
       - name: Zip .app bundle
         run: |
