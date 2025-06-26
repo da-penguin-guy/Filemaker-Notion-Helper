@@ -96,10 +96,15 @@ jobs:
 
       - name: Build with PyInstaller (macOS)
         run: |
-          pyinstaller --onefile --windowed MainApp.py --name FNBHelper-macOS
+          pyinstaller --windowed MainApp.py --name FNBHelper-macOS
+
+      - name: Zip .app bundle
+        run: |
+          cd dist
+          zip -r FNBHelper-macOS.app.zip FNBHelper-macOS.app
 
       - name: Upload to Release (macOS)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
-          files: dist/FNBHelper-macOS
+          files: dist/FNBHelper-macOS.app.zip
