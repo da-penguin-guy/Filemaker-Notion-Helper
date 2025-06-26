@@ -103,7 +103,7 @@ jobs:
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
           $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins)))'
-          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins))')
+          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
 
