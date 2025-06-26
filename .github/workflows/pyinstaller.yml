@@ -65,7 +65,8 @@ jobs:
 
       - name: Set up venv and install dependencies
         run: |
-          python -m venv venv
+          python -m venv venv --upgrade-deps
+          venv\Scripts\python -m ensurepip --upgrade
           venv\Scripts\python -m pip install --upgrade pip
           venv\Scripts\python -m pip install -r requirements.txt pyinstaller
 
@@ -102,7 +103,7 @@ jobs:
         run: |
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
-          $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.Plugins)))'
+          $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath)))'
           QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
