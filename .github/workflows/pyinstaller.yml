@@ -77,9 +77,10 @@ jobs:
           pip install pyupdater
 
       - name: Restore PyUpdater private key
+        shell: pwsh
         run: |
-          mkdir -p keys
-          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
+          if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
+          Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
       - name: Package with PyUpdater
         run: |
