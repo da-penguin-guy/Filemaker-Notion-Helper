@@ -5,14 +5,13 @@ from NotionHelper import *
 from pyupdater.client import Client
 from pyupdater.client.downloader import FileDownloader
 from client_config import ClientConfig
-import threading
 import requests
 import webbrowser
 import sys
 import csv
 import os
 
-APP_VERSION = "1.1.4" 
+APP_VERSION = "1.1.5" 
 GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}
