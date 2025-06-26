@@ -75,7 +75,7 @@ jobs:
           python -m PyInstaller --onefile --windowed MainApp.py \
             --name FNBHelper-Windows \
             --hidden-import=_cffi_backend \
-            --icon=F&B Icon.ico
+            --icon="F&B Icon.ico"
         working-directory: .
         shell: pwsh
 
@@ -145,7 +145,7 @@ jobs:
             --add-data "$QT_PLATFORMS:platforms" \
             --hidden-import=PyQt6.sip \
             --hidden-import=PyQt6.QtCore \
-            --icon=F&B Icon.icns
+            --icon="F&B Icon.icns"
         working-directory: .
 
       - name: List bundled Qt platforms (debug)
