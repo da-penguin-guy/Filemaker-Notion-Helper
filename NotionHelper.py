@@ -1,14 +1,20 @@
 import requests
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
+# Try to get the Notion API key from environment (for GitHub Actions/secrets)
 notionToken = os.getenv("NOTION_API_KEY")
+
+# If not found, try loading from .env (for local development)
 if notionToken is None:
-    raise ValueError("Notion API key not found. Please get the .env file provided")
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        notionToken = os.getenv("NOTION_API_KEY")
+    except ImportError:
+        pass
 
-
+if notionToken is None:
+    raise ValueError("Notion API key not found. Please set the NOTION_API_KEY environment variable or provide a .env file.")
 
 headers = {
     "Authorization": f"Bearer {notionToken}",

@@ -55,6 +55,8 @@ jobs:
   build-windows:
     needs: create-release
     runs-on: windows-latest
+    env:
+      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -97,6 +99,8 @@ jobs:
   build-macos:
     needs: create-release
     runs-on: macos-14  # Apple Silicon runner
+    env:
+      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
