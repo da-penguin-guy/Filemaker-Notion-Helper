@@ -89,7 +89,7 @@ jobs:
           if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
           Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
-      # --- NEW STEP: Initialize PyUpdater (Crucial for generating pyu-data structure) ---
+      # --- Initialize PyUpdater (Crucial for generating pyu-data structure) ---
       - name: Initialize PyUpdater
         run: pyupdater init --no-bootstrap
         shell: pwsh
@@ -107,11 +107,10 @@ jobs:
         id: package
         run: |
           pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }}
-          # After packaging, we need to collect the update info, which creates versions.json
-          pyupdater collect --json
+          # REMOVED: pyupdater collect --json
         shell: pwsh
 
-      # --- NEW STEP: Archive pyu-data ---
+      # --- Archive pyu-data ---
       - name: Archive PyUpdater Data (Windows)
         run: |
           Compress-Archive -Path pyu-data -DestinationPath pyu-data.zip
@@ -127,7 +126,7 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: |
             dist/FNBHelper-Windows.exe
-            pyu-data.zip # <--- CHANGED THIS LINE
+            pyu-data.zip
 
   build-macos:
     needs: create-release
@@ -155,7 +154,7 @@ jobs:
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
           $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath)))'
-          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(Py PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
+          QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
 
@@ -163,7 +162,7 @@ jobs:
         run: |
           if [ ! -d "$QT_PLATFORMS" ]; then
             echo "ERROR: Qt 'platforms' directory not found at $QT_PLATFORMS"
-            ls -l "${QT_PLATFORMS%/platforms}" || true
+            ls -l "${QT_PLUGINS%/platforms}" || true
             exit 1
           fi
 
@@ -194,7 +193,7 @@ jobs:
           mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
-      # --- NEW STEP: Initialize PyUpdater (Crucial for generating pyu-data structure) ---
+      # Initialize PyUpdater (Crucial for generating pyu-data structure)
       - name: Initialize PyUpdater
         run: ./venv/bin/pyupdater init --no-bootstrap
         # The --no-bootstrap flag prevents it from asking for input if it was already initialized
@@ -204,10 +203,9 @@ jobs:
         run: |
           VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
           ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION
-          # After packaging, we need to collect the update info, which creates versions.json
-          ./venv/bin/pyupdater collect --json
+          # REMOVED: ./venv/bin/pyupdater collect --json
 
-      # --- NEW STEP: Archive pyu-data ---
+      # Archive pyu-data
       - name: Archive PyUpdater Data (macOS)
         run: |
           zip -r pyu-data.zip pyu-data/
@@ -221,4 +219,4 @@ jobs:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
           files: |
             dist/FNBHelper-macOS.app.zip
-            pyu-data.zip # <--- CHANGED THIS LINE
+            pyu-data.zip
