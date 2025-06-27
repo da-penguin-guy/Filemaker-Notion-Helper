@@ -47,8 +47,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.create-release.outputs.tag_name }}
-          name: Release ${{ needs.create-release.outputs.tag_name }}
+          tag_name: ${{ steps.create_tag.outputs.tag }}
+          # CORRECTED: Use steps.create_tag.outputs.tag for the release name in the same job
+          name: Release ${{ steps.create_tag.outputs.tag }}
           draft: false
           prerelease: false
 
@@ -90,7 +91,7 @@ jobs:
           if (Test-Path pyu-data) { Remove-Item -Recurse -Force pyu-data }
         shell: pwsh
 
-      # --- NEW STEP: Create Initial PyUpdater Config ---
+      # --- Create Initial PyUpdater Config ---
       - name: Create Initial PyUpdater Config (Windows)
         run: |
           New-Item -ItemType Directory -Path .pyupdater -Force
@@ -207,7 +208,7 @@ jobs:
           rm -rf .pyupdater
           rm -rf pyu-data
 
-      # --- NEW STEP: Create Initial PyUpdater Config ---
+      # --- Create Initial PyUpdater Config ---
       - name: Create Initial PyUpdater Config (macOS)
         run: |
           mkdir -p .pyupdater
