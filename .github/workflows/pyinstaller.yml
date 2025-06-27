@@ -60,64 +60,89 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python (main venv, 3.11)
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Set up and install dependencies
+      - name: Freeze requirements for main venv
         run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          pip freeze > requirements.lock.txt
+        shell: pwsh
+
+      - name: Set up main venv and install dependencies
+        run: |
+          python -m venv venv
+          .\venv\Scripts\Activate.ps1
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r requirements.txt pyinstaller
+          python -m pip install -r requirements.lock.txt pyinstaller
+        shell: pwsh
 
       - name: Build with PyInstaller (Windows)
         run: |
+          .\venv\Scripts\Activate.ps1
           python -m PyInstaller --onefile --windowed MainApp.py `
             --name FNBHelper-Windows `
             --hidden-import=_cffi_backend `
             --icon="F&B Icon.ico"
-        working-directory: .
         shell: pwsh
 
-      - name: Install PyUpdater
+      - name: Set up Python 3.8 for PyUpdater (pyu-venv)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+
+      - name: Freeze requirements for pyu-venv
         run: |
-          pip install pyupdater
+          python -m pip install --upgrade pip
+          python -m pip install pyupdater==2.5.3
+          pip freeze > pyu-venv-requirements.lock.txt
+        shell: pwsh
+
+      - name: Create pyu-venv and install PyUpdater
+        run: |
+          python -m venv pyu-venv
+          .\pyu-venv\Scripts\Activate.ps1
+          python -m pip install --upgrade pip
+          python -m pip install -r pyu-venv-requirements.lock.txt
+        shell: pwsh
 
       - name: Restore PyUpdater private key
-        shell: pwsh
         run: |
           if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
           Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
+        shell: pwsh
 
-      # --- Ensure clean PyUpdater repository initialization (Crucial for generating pyu-data structure) ---
       - name: Ensure clean PyUpdater repository initialization
         run: |
-          Remove-Item -Recurse -Force .pyupdater # Ensure directory is completely removed
-          pyupdater init --no-bootstrap # Let PyUpdater create and initialize it
+          Remove-Item -Recurse -Force .pyupdater -ErrorAction SilentlyContinue
+          .\pyu-venv\Scripts\Activate.ps1
+          pyupdater init --no-bootstrap
         shell: pwsh
-        
+
       - name: Get version from MainApp.py
         id: get_version
         run: |
           $version = (Get-Content MainApp.py | Select-String -Pattern 'APP_VERSION' | Select-Object -First 1).Line.Split('"')[1]
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: pwsh
-        
 
       - name: Package with PyUpdater
         id: package
         run: |
-          # ADDED: Path to the built executable (dist/FNBHelper-Windows.exe)
+          .\pyu-venv\Scripts\Activate.ps1
           pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }} dist/FNBHelper-Windows.exe
         shell: pwsh
 
-      # --- Archive pyu-data ---
       - name: Archive PyUpdater Data (Windows)
         run: |
           Compress-Archive -Path pyu-data -DestinationPath pyu-data.zip
         shell: pwsh
 
-      - name: List files in workspace (After PyUpdater) # Enhanced logging
+      - name: List files in workspace (After PyUpdater)
         run: Get-ChildItem -Recurse
         shell: pwsh
 
@@ -143,11 +168,17 @@ jobs:
           python-version: '3.11'
           architecture: 'arm64'
 
+      - name: Freeze requirements for main venv (macOS)
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+          pip3 freeze > requirements.lock.txt
+
       - name: Set up venv and install dependencies (arm64)
         run: |
           python3 -m venv venv
           ./venv/bin/python -m pip install --upgrade pip
-          ./venv/bin/python -m pip install -r requirements.txt pyinstaller pyqt6
+          ./venv/bin/python -m pip install -r requirements.lock.txt pyinstaller pyqt6
 
       - name: Find Qt platforms plugin path
         id: qtpaths
@@ -185,28 +216,44 @@ jobs:
           cd dist
           zip -r FNBHelper-macOS.app.zip FNBHelper-macOS.app
 
-      - name: Install PyUpdater
-        run: |
-          ./venv/bin/pip install pyupdater
+      - name: Set up Python 3.8 for PyUpdater (pyu-venv)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
 
-      - name: Restore PyUpdater private key
+      - name: Freeze requirements for pyu-venv (macOS)
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyupdater==2.5.3
+          pip3 freeze > pyu-venv-requirements.lock.txt
+
+      - name: Create pyu-venv and install PyUpdater (macOS)
+        run: |
+          python3 -m venv pyu-venv
+          ./pyu-venv/bin/python -m pip install --upgrade pip
+          ./pyu-venv/bin/python -m pip install -r pyu-venv-requirements.lock.txt
+
+      - name: Restore PyUpdater private key (macOS)
         run: |
           mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
-      # Ensure clean PyUpdater repository initialization (Crucial for generating pyu-data structure)
-      - name: Ensure clean PyUpdater repository initialization
+      - name: Ensure clean PyUpdater repository initialization (macOS)
         run: |
           rm -rf .pyupdater # Ensure directory is completely removed
-          ./venv/bin/pyupdater init --no-bootstrap # Let PyUpdater create and initialize it
+          ./pyu-venv/bin/pyupdater init --no-bootstrap # Let PyUpdater create and initialize it
+
+      - name: Get version from MainApp.py (macOS)
+        id: get_version_macos
+        run: |
+          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Package with PyUpdater (macOS)
         run: |
-          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
-          # ADDED: Path to the zipped app bundle (dist/FNBHelper-macOS.app.zip)
-          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION dist/FNBHelper-macOS.app.zip
+          ./pyu-venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version ${{ steps.get_version_macos.outputs.version }} dist/FNBHelper-macOS.app.zip
 
-      # Archive pyu-data
       - name: Archive PyUpdater Data (macOS)
         run: |
           zip -r pyu-data.zip pyu-data/
