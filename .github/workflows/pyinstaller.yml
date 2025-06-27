@@ -48,7 +48,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.create_tag.outputs.tag }}
-          name: Release ${{ steps.create_tag.outputs.tag }}
+          name: Release ${{ steps.create-release.outputs.tag_name }}
           draft: false
           prerelease: false
 
@@ -91,6 +91,13 @@ jobs:
           if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
           Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
+      # --- NEW CRITICAL STEP: Clean PyUpdater Environment ---
+      - name: Clean PyUpdater Environment (Windows)
+        run: |
+          if (Test-Path .pyupdater) { Remove-Item -Recurse -Force .pyupdater }
+          if (Test-Path pyu-data) { Remove-Item -Recurse -Force pyu-data }
+        shell: pwsh
+
       - name: Initialize PyUpdater
         run: pyupdater init --no-bootstrap
         shell: pwsh
@@ -117,7 +124,7 @@ jobs:
           Compress-Archive -Path pyu-data -DestinationPath pyu-data.zip
         shell: pwsh
 
-      - name: List files in workspace (After PyUpdater, Windows) # Enhanced logging
+      - name: List files in workspace (After PyUpdater, Windows)
         run: Get-ChildItem -Recurse
         shell: pwsh
 
@@ -154,17 +161,15 @@ jobs:
         run: |
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
-          # Corrected: removed extra Py
           QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
 
       - name: Ensure Qt platforms plugin exists
         run: |
-          # Use the QT_PLATFORMS variable directly as it already includes /platforms
           if [ ! -d "$QT_PLATFORMS" ]; then
             echo "ERROR: Qt 'platforms' directory not found at $QT_PLATFORMS"
-            ls -l "${QT_PLUGINS}" || true # List parent directory for debugging
+            ls -l "${QT_PLUGINS}" || true
             exit 1
           fi
 
@@ -195,6 +200,12 @@ jobs:
           mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
+      # --- NEW CRITICAL STEP: Clean PyUpdater Environment ---
+      - name: Clean PyUpdater Environment (macOS)
+        run: |
+          rm -rf .pyupdater
+          rm -rf pyu-data
+
       - name: Initialize PyUpdater
         run: ./venv/bin/pyupdater init --no-bootstrap
 
@@ -216,7 +227,7 @@ jobs:
         run: |
           zip -r pyu-data.zip pyu-data/
 
-      - name: List files in workspace (After PyUpdater, macOS) # Enhanced logging
+      - name: List files in workspace (After PyUpdater, macOS)
         run: ls -R
 
       - name: Upload to Release (macOS)
