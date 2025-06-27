@@ -47,8 +47,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.create_tag.outputs.tag }}
-          name: Release ${{ steps.create-release.outputs.tag_name }}
+          tag_name: ${{ needs.create-release.outputs.tag_name }}
+          name: Release ${{ needs.create-release.outputs.tag_name }}
           draft: false
           prerelease: false
 
@@ -69,8 +69,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -r requirements.txt pyinstaller
-          # Add pyqt6 if your windows build also uses it in the future
-          # python -m pip install pyqt6
 
       - name: Build with PyInstaller (Windows)
         run: |
@@ -85,22 +83,30 @@ jobs:
         run: |
           pip install pyupdater
 
-      - name: Restore PyUpdater private key
-        shell: pwsh
-        run: |
-          if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
-          Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
-
-      # --- NEW CRITICAL STEP: Clean PyUpdater Environment ---
+      # --- Clean PyUpdater Environment ---
       - name: Clean PyUpdater Environment (Windows)
         run: |
           if (Test-Path .pyupdater) { Remove-Item -Recurse -Force .pyupdater }
           if (Test-Path pyu-data) { Remove-Item -Recurse -Force pyu-data }
         shell: pwsh
 
+      # --- NEW STEP: Create Initial PyUpdater Config ---
+      - name: Create Initial PyUpdater Config (Windows)
+        run: |
+          New-Item -ItemType Directory -Path .pyupdater -Force
+          Set-Content -Path .pyupdater/config.pyu -Value "APP_NAME = 'FNBHelper-Windows'"
+        shell: pwsh
+
       - name: Initialize PyUpdater
         run: pyupdater init --no-bootstrap
         shell: pwsh
+
+      # --- Restore PyUpdater private key (Moved after Initialize PyUpdater) ---
+      - name: Restore PyUpdater private key (Windows)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
+          Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
       - name: Get version from MainApp.py (Windows)
         id: get_version_windows
@@ -195,19 +201,26 @@ jobs:
         run: |
           ./venv/bin/pip install pyupdater
 
-      - name: Restore PyUpdater private key
-        run: |
-          mkdir -p keys
-          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
-
-      # --- NEW CRITICAL STEP: Clean PyUpdater Environment ---
+      # --- Clean PyUpdater Environment ---
       - name: Clean PyUpdater Environment (macOS)
         run: |
           rm -rf .pyupdater
           rm -rf pyu-data
 
+      # --- NEW STEP: Create Initial PyUpdater Config ---
+      - name: Create Initial PyUpdater Config (macOS)
+        run: |
+          mkdir -p .pyupdater
+          echo "APP_NAME = 'FNBHelper-macOS'" > .pyupdater/config.pyu
+
       - name: Initialize PyUpdater
         run: ./venv/bin/pyupdater init --no-bootstrap
+
+      # --- Restore PyUpdater private key (Moved after Initialize PyUpdater) ---
+      - name: Restore PyUpdater private key (macOS)
+        run: |
+          mkdir -p keys
+          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
       - name: Get version from MainApp.py (macOS)
         id: get_version_macos
