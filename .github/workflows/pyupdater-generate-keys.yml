@@ -1,0 +1,45 @@
+# This GitHub Actions workflow generates PyUpdater signing keys using Python 3.8
+# and uploads them as workflow artifacts for secure download.
+#
+# IMPORTANT: Never commit private keys to a public repository.
+#
+# Usage:
+# 1. Trigger this workflow manually from the Actions tab.
+# 2. Download the generated keys from the workflow run artifacts.
+# 3. Place the keys in your local .pyupdater/ directory.
+
+name: Generate PyUpdater Keys
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-keys:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install PyUpdater
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyupdater==2.5.3
+
+      - name: Initialize PyUpdater repo
+        run: |
+          pyupdater init --name "Filemaker-Notion-Helper" --company "YourCompany" --no-input
+
+      - name: Generate signing keys
+        run: |
+          pyupdater keys --create --no-input
+
+      - name: Upload keys as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyupdater-keys
+          path: .pyupdater/*

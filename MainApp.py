@@ -2,8 +2,6 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from NotionHelper import *
-from pyupdater.client import Client
-from client_config import ClientConfig
 import sys
 import csv
 import os
