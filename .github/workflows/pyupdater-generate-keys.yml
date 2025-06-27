@@ -30,6 +30,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyupdater==2.5.3
 
+      - name: Remove existing .pyupdater directory
+        run: rm -rf .pyupdater
+
       - name: Initialize PyUpdater repo
         run: |
           pyupdater init --name "Filemaker-Notion-Helper" --company "YourCompany" --no-input
