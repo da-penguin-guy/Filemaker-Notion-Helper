@@ -2,11 +2,13 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from NotionHelper import *
+import requests
+import webbrowser
 import sys
 import csv
 import os
 
-APP_VERSION = "1.1.31" 
+APP_VERSION = "1.0.15" 
 GITHUB_REPO = "da-penguin-guy/Filemaker-Notion-Helper"
 
 threads = {}
@@ -605,27 +607,25 @@ def AddNewTab(tabName: str, contentFunc=None) -> tuple:
 
     return newTab, newTabLayout
 
-def CheckForPyUpdaterUpdates(parent=None):
-    """Check for updates using PyUpdater and prompt the user to update."""
+def CheckForUpdates(parent=None):
+    """Check GitHub Releases for a new version and prompt to download."""
     try:
-        client = Client(ClientConfig(), refresh=True)
-        app_update = client.update_check(ClientConfig.APP_NAME, APP_VERSION)
-        if app_update is not None:
-            msg = QMessageBox(parent)
-            msg.setIcon(QMessageBox.Icon.Information)
-            msg.setWindowTitle("Update Available")
-            msg.setText(f"A new version is available!\n\nWould you like to download and install it now?")
-            msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            result = msg.exec()
-            if result == QMessageBox.StandardButton.Yes:
-                # Download and install update
-                app_update.download()
-                if app_update.is_downloaded():
-                    app_update.extract_restart()
-                else:
-                    QMessageBox.critical(parent, "Update Error", "Failed to download the update.")
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            latest_version = data["tag_name"].lstrip("v")
+            if latest_version > APP_VERSION:
+                msg = QMessageBox(parent)
+                msg.setIcon(QMessageBox.Icon.Information)
+                msg.setWindowTitle("Update Available")
+                msg.setText(f"A new version ({latest_version}) is available!\n\nWould you like to download it?")
+                msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                if msg.exec() == QMessageBox.StandardButton.Yes:
+                    webbrowser.open(data["html_url"])
+        # else: ignore errors silently
     except Exception as e:
-        print(f"PyUpdater update check failed: {e}")
+        print(f"Update check failed: {e}")
 
 def CreateLauncherButton(text: str, gridLayout: QGridLayout, row: int, col: int, callback=None) -> QPushButton:
     """Create a large launcher button for the main grid."""
@@ -643,7 +643,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = QWidget()
     window.setWindowTitle("FNB Helper")
-    window.setWindowIcon(QIcon("F&B Icon.png"))
     window.resize(700, 400)
 
     layout = QVBoxLayout()
@@ -663,6 +662,6 @@ if __name__ == "__main__":
     window.setLayout(layout)
     window.show()
 
-    CheckForPyUpdaterUpdates(window)
+    CheckForUpdates(window)
 
     sys.exit(app.exec())

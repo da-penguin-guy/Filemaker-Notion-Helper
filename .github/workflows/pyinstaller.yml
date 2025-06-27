@@ -55,111 +55,46 @@ jobs:
   build-windows:
     needs: create-release
     runs-on: windows-latest
-    env:
-      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean up old venv and lock files (Windows)
-        run: |
-          Remove-Item -Recurse -Force venv -ErrorAction SilentlyContinue
-          Remove-Item requirements.lock.txt -ErrorAction SilentlyContinue
-        shell: pwsh
-
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
-      - name: Set up venv and install all dependencies
+      - name: Set up and install dependencies
         run: |
-          python -m venv venv
-          .\venv\Scripts\Activate.ps1
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r requirements.txt pyinstaller pyupdater
-          pip freeze > requirements.lock.txt
-        shell: pwsh
+          python -m pip install -r requirements.txt pyinstaller
 
       - name: Build with PyInstaller (Windows)
         run: |
-          .\venv\Scripts\Activate.ps1
-          python -m PyInstaller --onefile --windowed MainApp.py `
-            --name FNBHelper-Windows `
-            --hidden-import=_cffi_backend `
-            --icon="F&B Icon.ico"
-        shell: pwsh
-
-      - name: Restore PyUpdater private key
-        run: |
-          if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
-          Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
-        shell: pwsh
-
-      - name: Ensure clean PyUpdater repository initialization
-        run: |
-          Remove-Item -Recurse -Force .pyupdater -ErrorAction SilentlyContinue
-          .\venv\Scripts\Activate.ps1
-          pyupdater init --no-bootstrap
-        shell: pwsh
-
-      - name: Get version from MainApp.py
-        id: get_version
-        run: |
-          $version = (Get-Content MainApp.py | Select-String -Pattern 'APP_VERSION' | Select-Object -First 1).Line.Split('"')[1]
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Package with PyUpdater
-        id: package
-        run: |
-          .\venv\Scripts\Activate.ps1
-          pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }} dist/FNBHelper-Windows.exe
-        shell: pwsh
-
-      - name: Archive PyUpdater Data (Windows)
-        run: |
-          Compress-Archive -Path pyu-data -DestinationPath pyu-data.zip
-        shell: pwsh
-
-      - name: List files in workspace (After PyUpdater)
-        run: Get-ChildItem -Recurse
-        shell: pwsh
+          python -m PyInstaller --onefile --windowed MainApp.py --name FNBHelper-Windows
 
       - name: Upload to Release (Windows)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
-          files: |
-            dist/FNBHelper-Windows.exe
-            pyu-data.zip
+          files: dist/FNBHelper-Windows.exe
 
   build-macos:
     needs: create-release
     runs-on: macos-14  # Apple Silicon runner
-    env:
-      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean up old venv and lock files (macOS)
-        run: |
-          rm -rf venv || true
-          rm -f requirements.lock.txt || true
-        shell: bash
-
-      - name: Set up Python 3.9 (macOS)
+      - name: Set up Python (Apple Silicon)
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-          architecture: 'x64'
+          python-version: '3.11'
+          architecture: 'arm64'
 
-      - name: Set up venv and install all dependencies (macOS)
+      - name: Set up venv and install dependencies (arm64)
         run: |
           python3 -m venv venv
-          ./venv/bin/python -m pip install --upgrade pip setuptools wheel
-          ./venv/bin/python -m pip install -r requirements.txt pyinstaller pyqt6 pyupdater
-          ./venv/bin/pip freeze > requirements.lock.txt
-        shell: bash
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/python -m pip install -r requirements.txt pyinstaller pyqt6
 
       - name: Find Qt platforms plugin path
         id: qtpaths
@@ -175,65 +110,22 @@ jobs:
         run: |
           if [ ! -d "$QT_PLATFORMS" ]; then
             echo "ERROR: Qt 'platforms' directory not found at $QT_PLATFORMS"
-            ls -l "${QT_PLUGINS%/platforms}" || true
+            ls -l "${QT_PLATFORMS%/platforms}" || true
             exit 1
           fi
 
       - name: Build with PyInstaller (macOS arm64)
         run: |
           ./venv/bin/python -m PyInstaller --windowed MainApp.py --name FNBHelper-macOS \
-            --add-data "$QT_PLATFORMS:platforms" \
-            --hidden-import=PyQt6.sip \
-            --hidden-import=PyQt6.QtCore \
-            --icon="F&B Icon.icns"
-        working-directory: .
-
-      - name: List bundled Qt platforms (debug)
-        run: |
-          ls -l dist/FNBHelper-macOS.app/Contents/MacOS/platforms || true
+            --add-data "$QT_PLATFORMS:platforms"
 
       - name: Zip .app bundle
         run: |
           cd dist
           zip -r FNBHelper-macOS.app.zip FNBHelper-macOS.app
 
-      - name: Restore PyUpdater private key (macOS)
-        run: |
-          mkdir -p keys
-          echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
-        shell: bash
-
-      - name: Ensure clean PyUpdater repository initialization (macOS)
-        run: |
-          rm -rf .pyupdater || true
-          ./venv/bin/pyupdater init --no-bootstrap
-        shell: bash
-
-      - name: Get version from MainApp.py (macOS)
-        id: get_version_macos
-        run: |
-          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-        shell: bash
-
-      - name: Package with PyUpdater (macOS)
-        run: |
-          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version ${{ steps.get_version_macos.outputs.version }} dist/FNBHelper-macOS.app.zip
-        shell: bash
-
-      - name: Archive PyUpdater Data (macOS)
-        run: |
-          zip -r pyu-data.zip pyu-data/
-        shell: bash
-
-      - name: List files in workspace (After PyUpdater) # Enhanced logging
-        run: ls -R
-        shell: bash
-
       - name: Upload to Release (macOS)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create-release.outputs.tag_name }}
-          files: |
-            dist/FNBHelper-macOS.app.zip
-            pyu-data.zip
+          files: dist/FNBHelper-macOS.app.zip

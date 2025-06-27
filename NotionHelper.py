@@ -1,28 +1,14 @@
 import requests
+from dotenv import load_dotenv
 import os
-import sys
-from PyQt6.QtWidgets import QMessageBox, QApplication
 
-# Try to get the Notion API key from environment (for GitHub Actions/secrets)
+load_dotenv()
+
 notionToken = os.getenv("NOTION_API_KEY")
-
-# If not found, try loading from .env (for local development)
 if notionToken is None:
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-        notionToken = os.getenv("NOTION_API_KEY")
-    except ImportError:
-        pass
+    raise ValueError("Notion API key not found. Please get the .env file provided")
 
-if notionToken is None:
-    app = QApplication(sys.argv)
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Icon.Critical)
-    msg.setWindowTitle("Missing Notion API Key")
-    msg.setText("Notion API key not found. Please set the NOTION_API_KEY environment variable or provide a .env file in the same folder as the .exe.")
-    msg.exec()
-    sys.exit(1)
+
 
 headers = {
     "Authorization": f"Bearer {notionToken}",
