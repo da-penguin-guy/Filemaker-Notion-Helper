@@ -48,7 +48,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.create_tag.outputs.tag }}
-          # CORRECTED: Use steps.create_tag.outputs.tag for the release name in the same job
           name: Release ${{ steps.create_tag.outputs.tag }}
           draft: false
           prerelease: false
@@ -84,54 +83,41 @@ jobs:
         run: |
           pip install pyupdater
 
-      # --- Clean PyUpdater Environment ---
-      - name: Clean PyUpdater Environment (Windows)
-        run: |
-          if (Test-Path .pyupdater) { Remove-Item -Recurse -Force .pyupdater }
-          if (Test-Path pyu-data) { Remove-Item -Recurse -Force pyu-data }
-        shell: pwsh
-
-      # --- Create Initial PyUpdater Config ---
-      - name: Create Initial PyUpdater Config (Windows)
-        run: |
-          New-Item -ItemType Directory -Path .pyupdater -Force
-          Set-Content -Path .pyupdater/config.pyu -Value "APP_NAME = 'FNBHelper-Windows'"
-        shell: pwsh
-
-      - name: Initialize PyUpdater
-        run: pyupdater init --no-bootstrap
-        shell: pwsh
-
-      # --- Restore PyUpdater private key (Moved after Initialize PyUpdater) ---
-      - name: Restore PyUpdater private key (Windows)
+      - name: Restore PyUpdater private key
         shell: pwsh
         run: |
           if (-not (Test-Path keys)) { New-Item -ItemType Directory -Path keys }
           Set-Content -Path keys/FNBHelper_priv.pem -Value "${{ secrets.PYUPDATER_PRIVATE_KEY }}"
 
-      - name: Get version from MainApp.py (Windows)
-        id: get_version_windows
+      # --- Ensure clean PyUpdater repository initialization (Crucial for generating pyu-data structure) ---
+      - name: Ensure clean PyUpdater repository initialization
+        run: |
+          Remove-Item -Recurse -Force .pyupdater # Ensure directory is completely removed
+          pyupdater init --no-bootstrap # Let PyUpdater create and initialize it
+        shell: pwsh
+        
+      - name: Get version from MainApp.py
+        id: get_version
         run: |
           $version = (Get-Content MainApp.py | Select-String -Pattern 'APP_VERSION' | Select-Object -First 1).Line.Split('"')[1]
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: pwsh
+        
 
-      - name: Package with PyUpdater (Windows)
+      - name: Package with PyUpdater
+        id: package
         run: |
-          pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version_windows.outputs.version }} dist/FNBHelper-Windows.exe
+          # ADDED: Path to the built executable (dist/FNBHelper-Windows.exe)
+          pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }} dist/FNBHelper-Windows.exe
         shell: pwsh
 
-      - name: Debug pyu-data contents (Windows)
-        run: |
-          Get-ChildItem -Recurse pyu-data
-        shell: pwsh
-
+      # --- Archive pyu-data ---
       - name: Archive PyUpdater Data (Windows)
         run: |
           Compress-Archive -Path pyu-data -DestinationPath pyu-data.zip
         shell: pwsh
 
-      - name: List files in workspace (After PyUpdater, Windows)
+      - name: List files in workspace (After PyUpdater) # Enhanced logging
         run: Get-ChildItem -Recurse
         shell: pwsh
 
@@ -168,6 +154,7 @@ jobs:
         run: |
           PYTHON_BIN=./venv/bin/python
           echo "Using python: $PYTHON_BIN"
+          $PYTHON_BIN -c 'import PyQt6.QtCore; print(list(PyQt6.QtCore.QLibraryInfo.paths(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath)))'
           QT_PLUGINS=$($PYTHON_BIN -c 'import PyQt6.QtCore; print(PyQt6.QtCore.QLibraryInfo.path(PyQt6.QtCore.QLibraryInfo.LibraryPath.PluginsPath))')
           echo "QT_PLATFORMS=$QT_PLUGINS/platforms" >> $GITHUB_ENV
           echo "QT_PLATFORMS is: $QT_PLUGINS/platforms"
@@ -176,7 +163,7 @@ jobs:
         run: |
           if [ ! -d "$QT_PLATFORMS" ]; then
             echo "ERROR: Qt 'platforms' directory not found at $QT_PLATFORMS"
-            ls -l "${QT_PLUGINS}" || true
+            ls -l "${QT_PLUGINS%/platforms}" || true
             exit 1
           fi
 
@@ -202,46 +189,29 @@ jobs:
         run: |
           ./venv/bin/pip install pyupdater
 
-      # --- Clean PyUpdater Environment ---
-      - name: Clean PyUpdater Environment (macOS)
-        run: |
-          rm -rf .pyupdater
-          rm -rf pyu-data
-
-      # --- Create Initial PyUpdater Config ---
-      - name: Create Initial PyUpdater Config (macOS)
-        run: |
-          mkdir -p .pyupdater
-          echo "APP_NAME = 'FNBHelper-macOS'" > .pyupdater/config.pyu
-
-      - name: Initialize PyUpdater
-        run: ./venv/bin/pyupdater init --no-bootstrap
-
-      # --- Restore PyUpdater private key (Moved after Initialize PyUpdater) ---
-      - name: Restore PyUpdater private key (macOS)
+      - name: Restore PyUpdater private key
         run: |
           mkdir -p keys
           echo "${{ secrets.PYUPDATER_PRIVATE_KEY }}" > keys/FNBHelper_priv.pem
 
-      - name: Get version from MainApp.py (macOS)
-        id: get_version_macos
+      # Ensure clean PyUpdater repository initialization (Crucial for generating pyu-data structure)
+      - name: Ensure clean PyUpdater repository initialization
         run: |
-          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          rm -rf .pyupdater # Ensure directory is completely removed
+          ./venv/bin/pyupdater init --no-bootstrap # Let PyUpdater create and initialize it
 
       - name: Package with PyUpdater (macOS)
         run: |
-          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version ${{ steps.get_version_macos.outputs.version }} dist/FNBHelper-macOS.app.zip
+          VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
+          # ADDED: Path to the zipped app bundle (dist/FNBHelper-macOS.app.zip)
+          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION dist/FNBHelper-macOS.app.zip
 
-      - name: Debug pyu-data contents (macOS)
-        run: |
-          ls -lR pyu-data
-
+      # Archive pyu-data
       - name: Archive PyUpdater Data (macOS)
         run: |
           zip -r pyu-data.zip pyu-data/
 
-      - name: List files in workspace (After PyUpdater, macOS)
+      - name: List files in workspace (After PyUpdater) # Enhanced logging
         run: ls -R
 
       - name: Upload to Release (macOS)
