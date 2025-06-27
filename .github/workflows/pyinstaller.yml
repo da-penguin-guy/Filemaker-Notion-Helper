@@ -102,12 +102,13 @@ jobs:
           $version = (Get-Content MainApp.py | Select-String -Pattern 'APP_VERSION' | Select-Object -First 1).Line.Split('"')[1]
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: pwsh
+        
 
       - name: Package with PyUpdater
         id: package
         run: |
-          pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }}
-          # REMOVED: pyupdater collect --json
+          # ADDED: Path to the built executable (dist/FNBHelper-Windows.exe)
+          pyupdater pkg --process --app-name FNBHelper-Windows --app-version ${{ steps.get_version.outputs.version }} dist/FNBHelper-Windows.exe
         shell: pwsh
 
       # --- Archive pyu-data ---
@@ -202,8 +203,8 @@ jobs:
       - name: Package with PyUpdater (macOS)
         run: |
           VERSION=$(grep 'APP_VERSION' MainApp.py | head -1 | cut -d'"' -f2)
-          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION
-          # REMOVED: ./venv/bin/pyupdater collect --json
+          # ADDED: Path to the zipped app bundle (dist/FNBHelper-macOS.app.zip)
+          ./venv/bin/pyupdater pkg --process --app-name FNBHelper-macOS --app-version $VERSION dist/FNBHelper-macOS.app.zip
 
       # Archive pyu-data
       - name: Archive PyUpdater Data (macOS)
